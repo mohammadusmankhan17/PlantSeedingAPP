@@ -18,7 +18,6 @@ from tensorflow.keras.preprocessing import image
 import numpy as np
 from util import base64_to_pil
 
-
 # Declare a flask app
 app = Flask(__name__)
 
@@ -39,21 +38,27 @@ MODEL_PATH = 'models/leaf-classifier.h5'
 # Load your own trained model
 model = load_model(MODEL_PATH)
 model._make_predict_function()          # Necessary
-print('Model loaded. Start serving...')
+# print('Model loaded. Start serving...')
 
 
 def model_predict(img, model):
-    img = img.resize((64, 64))
+
+    if img.mode != "RGB":
+        img = img.convert("RGB")
+
+    img = img.resize((128, 128))
 
     # Preprocessing the image
     x = image.img_to_array(img)
-    # x = np.true_divide(x, 255)
+    x = np.true_divide(x, 255)
     x = np.expand_dims(x, axis=0)
+  
 
     # Be careful how your trained model deals with the input
     # otherwise, it won't make correct prediction!
-    x = preprocess_input(x, mode='tf')
+    #x = preprocess_input(x, mode='tf')
 
+    #preds = model.predict(x)
     preds = model.predict(x)
     return preds
 
@@ -75,12 +80,13 @@ def predict():
 
         # Make prediction
         preds = model_predict(img, model)
-
+      
         # Process your result for human
         pred_proba = "{:.3f}".format(np.amax(preds))    # Max probability
-        pred_class = decode_predictions(preds, top=1)   # ImageNet Decode
-
-        result = str(pred_class[0][0][1])               # Convert to string
+        #pred_class = decode_predictions(preds, top=1)   # ImageNet Decode
+        CLASSES = ['Black-grass', 'Charlock', 'Common Chickweed', 'Cranesbill', 'Maize']
+        #result = str(pred_class[0][0][1])  # Convert to string
+        result =CLASSES[np.argmax(preds)]
         result = result.replace('_', ' ').capitalize()
         
         # Serialize the result, you can add additional fields
